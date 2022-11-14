@@ -28,13 +28,13 @@ import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 import org.apache.spark.sql.execution.exchange._
 import org.apache.spark.sql.execution.joins._
 import org.apache.spark.sql.execution.window.WindowExec
-
 import io.glutenproject.GlutenConfig
 import io.glutenproject.backendsapi.BackendsApiManager
 import io.glutenproject.execution._
 import io.glutenproject.extension.columnar.TransformHint.TRANSFORM_SUPPORTED
 import io.glutenproject.extension.columnar.TransformHint.TRANSFORM_UNSUPPORTED
 import io.glutenproject.extension.columnar.TransformHint.TransformHint
+import org.apache.hadoop.hive.ql.exec.UDF
 
 object TransformHint extends Enumeration {
   type TransformHint = Value
@@ -175,6 +175,9 @@ case class AddTransformHintRule() extends Rule[SparkPlan] {
               .genFilterExecTransformer(plan.condition, plan.child)
             TransformHints.tag(plan, transformer.doValidate().toTransformHint)
           }
+        // Hive UDF is NOT supported by now.
+        case plan: UDF =>
+          TransformHints.tagNotTransformable(plan)
         case plan: HashAggregateExec =>
           if (!enableColumnarHashAgg) {
             TransformHints.tagNotTransformable(plan)
