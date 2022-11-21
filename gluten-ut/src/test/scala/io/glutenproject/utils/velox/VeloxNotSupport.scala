@@ -21,6 +21,7 @@ import io.glutenproject.utils.NotSupport
 import org.apache.spark.sql.DateFunctionsSuite
 import org.apache.spark.sql.StringFunctionsSuite
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.sources.TableScanSuite
 
 object VeloxNotSupport extends NotSupport {
 
@@ -34,6 +35,7 @@ object VeloxNotSupport extends NotSupport {
     simpleClassName[DecimalExpressionSuite],
     simpleClassName[StringFunctionsSuite],
     simpleClassName[RegexpExpressionsSuite],
-    simpleClassName[PredicateSuite]
+    simpleClassName[PredicateSuite],
+    simpleClassName[TableScanSuite]
   )
 }
