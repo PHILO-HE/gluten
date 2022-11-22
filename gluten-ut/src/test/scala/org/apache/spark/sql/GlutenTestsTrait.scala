@@ -52,7 +52,7 @@ trait GlutenTestsTrait extends SparkFunSuite with ExpressionEvalHelper with Glut
     FileUtils.forceMkdir(new File(warehouse))
     FileUtils.forceMkdir(new File(metaStorePathAbsolute))
     super.beforeAll()
-    initializeSession()
+    initializeSession1()
     _spark.sparkContext.setLogLevel("WARN")
   }
 
@@ -94,7 +94,7 @@ trait GlutenTestsTrait extends SparkFunSuite with ExpressionEvalHelper with Glut
     status
   }
 
-  protected def initializeSession(): Unit = {
+  protected def initializeSession1(): Unit = {
     if (_spark == null) {
       val sparkBuilder = SparkSession
         .builder()

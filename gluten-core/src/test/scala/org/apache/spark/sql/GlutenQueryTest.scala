@@ -98,7 +98,7 @@ abstract class GlutenQueryTest extends PlanTest {
   }
 
   private def getResult[T](ds: => Dataset[T]): Array[T] = {
-    val analyzedDS = try ds catch {
+    val analyzedDS = try ds catch {f
       case ae: AnalysisException =>
         if (ae.plan.isDefined) {
           fail(

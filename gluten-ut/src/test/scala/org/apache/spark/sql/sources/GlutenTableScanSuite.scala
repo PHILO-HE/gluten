@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.sources
 
-class GlutenTableScanSuite extends TableScanSuite{
+import org.apache.spark.sql.GlutenTestsTrait
+
+class GlutenTableScanSuite extends TableScanSuite with GlutenTestsTrait {
 
 }
