@@ -27,6 +27,7 @@
 #include "velox/row/UnsafeRowDynamicSerializer.h"
 #include "velox/row/UnsafeRowSerializer.h"
 #include "velox/vector/arrow/Bridge.h"
+#include <iostream>
 
 using namespace facebook::velox;
 
@@ -116,6 +117,33 @@ arrow::Status VeloxColumnarToRowConverter::Write() {
     }                                                                                 \
   } while (0)
 
+#define SERIALIZE_COLUMN_EXTRA(DataType)                                              \
+  do {                                                                                \
+    if (mayHaveNulls) {                                                               \
+      for (int row_idx = 0; row_idx < num_rows_; row_idx++) {                         \
+        if (vec->isNullAt(row_idx)) {                                                 \
+          SetNullAt(buffer_address_, offsets_[row_idx], field_offset, col_idx);       \
+        } else {                                                                      \
+          auto write_address = (char*)(field_address + offsets_[row_idx]);            \
+          row::UnsafeRowDynamicSerializer::serialize(DataType, vec, write_address, row_idx); \
+        }                                                                             \
+      }                                                                               \
+    } else {                                                                          \
+      for (int row_idx = 0; row_idx < num_rows_; row_idx++) {                         \
+        auto write_address = (char*)(field_address + offsets_[row_idx]);              \
+        row::UnsafeRowDynamicSerializer::serialize(DataType, vec, write_address, row_idx);   \
+      }                                                                               \
+    }                                                                                 \
+  } while (0)
+
+
+//  do {                                                                                \
+//      for (int row_idx = 0; row_idx < num_rows_; row_idx++) {                         \
+//        auto write_address = (char*)(field_address + offsets_[row_idx]);              \
+//        row::UnsafeRowDynamicSerializer::serialize(DataType, vec, write_address, row_idx);   \
+//      }                                                                               \
+//  } while (0)
+
     auto col_type_id = schema_->field(col_idx)->type()->id();
     switch (col_type_id) {
       // We should keep supported types consistent with that in #buildCheck of GlutenColumnarToRowExec.scala.
@@ -150,6 +178,33 @@ arrow::Status VeloxColumnarToRowConverter::Write() {
       case arrow::BooleanType::type_id: {
         SERIALIZE_COLUMN(BooleanType);
         break;
+      }
+      case arrow::StructType::type_id: {
+        //SERIALIZE_COLUMN(RowType<TinyintType>);
+        //SERIALIZE_COLUMN(RowType);
+        //SERIALIZE_COLUMN_EXTRA(ROW({BIGINT()}));
+        //SERIALIZE_COLUMN_EXTRA(ROW({INTEGER()}));
+
+        std::cout << "#### name: " << schema_->field(col_idx)->type()->field(0)->name() << std::endl;
+        std::cout << "#### num: " << schema_->field(col_idx)->type()->num_fields() << std::endl;
+        std::cout << "#### id: " << schema_->field(col_idx)->type()->id() << std::endl;
+//        SERIALIZE_COLUMN_EXTRA(ROW({schema_->field(col_idx)->type()->field(0)->name(), schema_->field(col_idx)->type()->field(1)->name()}, {INTEGER(), INTEGER()}));
+        SERIALIZE_COLUMN_EXTRA(ROW({INTEGER()}));
+
+//        SERIALIZE_COLUMN_EXTRA(ROW({"csv"}, {INTEGER()}));
+        break;
+      }
+//      case arrow::ListType::type_id: {
+//        SERIALIZE_COLUMN(Array<TinyintType>);
+//        break;
+//      }
+//      case arrow::MapType::type_id: {
+//        SERIALIZE_COLUMN(Map<TinyintType, TinyintType>);
+//        break;
+//      }
+      case arrow::TimestampType::type_id: {
+         SERIALIZE_COLUMN(TimestampType);
+         break;
       }
       case arrow::BinaryType::type_id:
       case arrow::StringType::type_id: {

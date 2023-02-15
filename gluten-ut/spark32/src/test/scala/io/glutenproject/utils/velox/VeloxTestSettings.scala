@@ -371,7 +371,7 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenConfigBehaviorSuite]
   enableSuite[GlutenCountMinSketchAggQuerySuite]
   enableSuite[GlutenCsvFunctionsSuite]
-    .exclude("roundtrip to_csv -> from_csv")
+    .include("Gluten: roundtrip to_csv -> from_csv")
   enableSuite[GlutenCTEHintSuite]
   enableSuite[GlutenCTEInlineSuiteAEOff]
   enableSuite[GlutenCTEInlineSuiteAEOn]

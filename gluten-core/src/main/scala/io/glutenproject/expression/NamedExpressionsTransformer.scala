@@ -45,12 +45,6 @@ abstract class AliasBaseTransformer(
   }
 }
 
-class AliasTransformer(substraitExprName: String,
-                       child: ExpressionTransformer,
-                       original: Expression)
-  extends AliasBaseTransformer(substraitExprName, child, original) {
-}
-
 case class AttributeReferenceTransformer(name: String,
                                     ordinal: Int,
                                     dataType: DataType,
