@@ -33,7 +33,7 @@ import io.glutenproject.utils.BindReferencesUtil
 import io.substrait.proto.SortField
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, NamedExpression, Rank, RowNumber, SortOrder, SpecifiedWindowFrame, WindowExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, Literal, NamedExpression, Rank, RowNumber, SortOrder, SpecifiedWindowFrame, WindowExpression}
 import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.catalyst.plans.physical.{AllTuples, ClusteredDistribution, Distribution, Partitioning}
 import org.apache.spark.sql.execution.SparkPlan
@@ -234,6 +234,11 @@ case class WindowExecTransformer(windowExpression: Seq[NamedExpression],
     // Partition By Expressions
     val partitionsExpressions = new util.ArrayList[ExpressionNode]()
     partitionSpec.map { partitionExpr =>
+        partitionExpr match {
+          case _: Literal =>
+            throw new UnsupportedOperationException("Literal partition key is not supported!")
+          case _ =>
+        }
       val exprNode = ExpressionConverter
         .replaceWithExpressionTransformer(partitionExpr, attributeSeq = child.output)
         .doTransform(args)
@@ -305,7 +310,7 @@ case class WindowExecTransformer(windowExpression: Seq[NamedExpression],
         orderSpec, child.output, operatorId, null, validation = true)
     } catch {
       case e: Throwable =>
-        logDebug(s"Validation failed for ${this.getClass.toString} due to ${e.getMessage}")
+        logWarning(s"Validation failed for ${this.getClass.toString} due to: ${e.getMessage}")
         return false
     }
 
