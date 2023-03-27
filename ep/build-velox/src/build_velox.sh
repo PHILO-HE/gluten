@@ -10,8 +10,8 @@ BUILD_PROTOBUF=ON
 BUILD_TYPE=release
 VELOX_HOME=
 #for ep cache
-VELOX_REPO=https://github.com/oap-project/velox.git
-VELOX_BRANCH=main
+VELOX_REPO=https://github.com/PHILO-HE/velox.git
+VELOX_BRANCH=revert-parquet-scan-fix
 TARGET_BUILD_COMMIT=""
 
 LINUX_DISTRIBUTION=$(. /etc/os-release && echo ${ID})
@@ -144,7 +144,7 @@ function compile {
     if [ $ENABLE_S3 == "ON" ]; then
       COMPILE_OPTION="$COMPILE_OPTION -DVELOX_ENABLE_S3=ON"
     fi
-    COMPILE_OPTION="$COMPILE_OPTION -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+    COMPILE_OPTION="$COMPILE_OPTION -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DVELOX_BUILD_BENCHMARKS=ON"
     COMPILE_TYPE=$(if [[ "$BUILD_TYPE" == "debug" ]] || [[ "$BUILD_TYPE" == "Debug" ]]; then echo 'debug'; else echo 'release'; fi)
     echo "COMPILE_OPTION: "$COMPILE_OPTION
     make $COMPILE_TYPE EXTRA_CMAKE_FLAGS="${COMPILE_OPTION}"
