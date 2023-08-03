@@ -18,10 +18,10 @@ package io.glutenproject.backendsapi.velox
 
 import io.glutenproject.GlutenConfig
 import io.glutenproject.backendsapi._
+import io.glutenproject.exception.GlutenNotSupportException
 import io.glutenproject.expression.WindowFunctionsBuilder
 import io.glutenproject.substrait.rel.LocalFilesNode.ReadFileFormat
 import io.glutenproject.substrait.rel.LocalFilesNode.ReadFileFormat.{DwrfReadFormat, OrcReadFormat, ParquetReadFormat}
-
 import org.apache.spark.sql.catalyst.expressions.{Alias, CumeDist, DenseRank, Descending, Expression, Literal, NamedExpression, NthValue, PercentRank, RangeFrame, Rank, RowNumber, SortOrder, SpecialFrameBoundary, SpecifiedWindowFrame}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Count, Sum}
 import org.apache.spark.sql.catalyst.plans.JoinType
@@ -113,7 +113,7 @@ object BackendSettings extends BackendSettingsApi {
         func => {
           val windowExpression = func match {
             case alias: Alias => WindowFunctionsBuilder.extractWindowExpression(alias.child)
-            case _ => throw new UnsupportedOperationException(s"$func is not supported.")
+            case _ => throw new GlutenNotSupportException(s"$func is not supported.")
           }
 
           // Block the offloading by checking Velox's current limitations
@@ -127,7 +127,7 @@ object BackendSettings extends BackendSettingsApi {
                     order =>
                       order.direction match {
                         case Descending =>
-                          throw new UnsupportedOperationException(
+                          throw new GlutenNotSupportException(
                             "DESC order is not supported when" +
                               " literal bound type is used!")
                         case _ =>
@@ -137,16 +137,16 @@ object BackendSettings extends BackendSettingsApi {
                       order.dataType match {
                         case ByteType | ShortType | IntegerType | LongType | DateType =>
                         case _ =>
-                          throw new UnsupportedOperationException(
+                          throw new GlutenNotSupportException(
                             "Only integral type & date type are" +
                               " supported for sort key when literal bound type is used!")
                       })
                   val rawValue = e.eval().toString.toLong
                   if (isUpperBound && rawValue < 0) {
-                    throw new UnsupportedOperationException(
+                    throw new GlutenNotSupportException(
                       "Negative upper bound is not supported!")
                   } else if (!isUpperBound && rawValue > 0) {
-                    throw new UnsupportedOperationException(
+                    throw new GlutenNotSupportException(
                       "Positive lower bound is not supported!")
                   }
                 case _ =>

@@ -27,7 +27,6 @@ import io.glutenproject.substrait.SubstraitContext
 import io.glutenproject.substrait.expression.ExpressionNode
 import io.glutenproject.substrait.extensions.ExtensionBuilder
 import io.glutenproject.substrait.rel.{RelBuilder, RelNode}
-
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
@@ -36,11 +35,10 @@ import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.v2.{BatchScanExec, DataSourceV2ScanExecBase, FileScan}
 import org.apache.spark.sql.utils.StructTypeFWD
 import org.apache.spark.sql.vectorized.ColumnarBatch
-
 import com.google.protobuf.Any
+import io.glutenproject.exception.GlutenNotSupportException
 
 import java.util
-
 import scala.collection.JavaConverters._
 
 abstract class FilterExecTransformerBase(val cond: Expression, val input: SparkPlan)
@@ -442,7 +440,7 @@ object FilterHandler {
           case scan: FileScan =>
             scan.dataFilters
           case _ =>
-            throw new UnsupportedOperationException(
+            throw new GlutenNotSupportException(
               s"${batchScan.scan.getClass.toString} is not supported")
         }
       case _ =>
@@ -525,7 +523,7 @@ object FilterHandler {
             new BatchScanExecTransformer(batchScan.output, scan, leftFilters ++ newPartitionFilters)
           case _ =>
             if (batchScan.runtimeFilters.isEmpty) {
-              throw new UnsupportedOperationException(
+              throw new GlutenNotSupportException(
                 s"${batchScan.scan.getClass.toString} is not supported.")
             } else {
               // IF filter expressions aren't empty, we need to transform the inner operators.
@@ -538,6 +536,6 @@ object FilterHandler {
             }
         }
       case other =>
-        throw new UnsupportedOperationException(s"${other.getClass.toString} is not supported.")
+        throw new GlutenNotSupportException(s"${other.getClass.toString} is not supported.")
     }
 }

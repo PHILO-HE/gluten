@@ -18,11 +18,11 @@ package io.glutenproject.extension
 
 import io.glutenproject.{GlutenConfig, GlutenSparkExtensionsInjector}
 import io.glutenproject.backendsapi.BackendsApiManager
+import io.glutenproject.exception.GlutenNotSupportException
 import io.glutenproject.execution._
 import io.glutenproject.expression.ExpressionConverter
 import io.glutenproject.extension.columnar._
 import io.glutenproject.utils.{ColumnarShuffleUtil, LogLevelUtil, PhysicalPlanSelector}
-
 import org.apache.spark.api.python.EvalPythonExecTransformer
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{SparkSession, SparkSessionExtensions}
@@ -323,7 +323,7 @@ case class TransformPreOverrides(isAdaptiveContext: Boolean)
               }
             )
         } catch {
-          case _: Throwable =>
+          case _: GlutenNotSupportException =>
             logInfo(
               "Fallback to SortAggregateExec instead of forcibly" +
                 " using HashAggregateExecTransformer!")
@@ -574,7 +574,7 @@ case class TransformPreOverrides(isAdaptiveContext: Boolean)
         newSource
       }
     case other =>
-      throw new UnsupportedOperationException(s"${other.getClass.toString} is not supported.")
+      throw new GlutenNotSupportException(s"${other.getClass.toString} is not supported.")
   }
 
   def apply(plan: SparkPlan): SparkPlan = {

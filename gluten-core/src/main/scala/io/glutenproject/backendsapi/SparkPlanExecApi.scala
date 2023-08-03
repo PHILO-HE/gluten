@@ -16,10 +16,10 @@
  */
 package io.glutenproject.backendsapi
 
+import io.glutenproject.exception.GlutenNotSupportException
 import io.glutenproject.execution._
 import io.glutenproject.expression._
 import io.glutenproject.substrait.expression.{ExpressionBuilder, ExpressionNode, WindowFunctionNode}
-
 import org.apache.spark.ShuffleDependency
 import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.Serializer
@@ -343,7 +343,7 @@ trait SparkPlanExecApi {
             val aggregateFunc = aggExpression.aggregateFunction
             val substraitAggFuncName = ExpressionMappings.expressionsMap.get(aggregateFunc.getClass)
             if (substraitAggFuncName.isEmpty) {
-              throw new UnsupportedOperationException(s"Not currently supported: $aggregateFunc.")
+              throw new GlutenNotSupportException(s"Not currently supported: $aggregateFunc.")
             }
 
             val childrenNodeList = new util.ArrayList[ExpressionNode]()
@@ -415,7 +415,7 @@ trait SparkPlanExecApi {
             )
             windowExpressionNodes.add(windowFunctionNode)
           case _ =>
-            throw new UnsupportedOperationException(
+            throw new GlutenNotSupportException(
               "unsupported window function type: " +
                 wExpression.windowFunction)
         }
