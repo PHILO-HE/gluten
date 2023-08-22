@@ -176,7 +176,7 @@ object ExpressionMappings {
     // JSON functions
     Sig[GetJsonObject](GET_JSON_OBJECT),
     Sig[LengthOfJsonArray](JSON_ARRAY_LENGTH),
-    Sig[StructsToJson](TO_JSON),
+    Sig[StructsToJson](CAST),
     Sig[JsonToStructs](FROM_JSON),
     Sig[JsonTuple](JSON_TUPLE),
     // Hash functions

@@ -512,11 +512,13 @@ object ExpressionConverter extends SQLConfHelper with Logging {
         // Add trim node, as necessary.
         val newCast =
           BackendsApiManager.getSparkPlanExecApiInstance.genCastWithNewChild(c)
+        // Timezone of Cast is passed through native config.
         new CastTransformer(
           replaceWithExpressionTransformer(newCast.child, attributeSeq),
           newCast.dataType,
-          newCast.timeZoneId,
           newCast)
+      case s: StructsToJson =>
+        new CastTransformer(replaceWithExpressionTransformer(s.child, attributeSeq), s.dataType, s)
       case k: KnownFloatingPointNormalized =>
         new KnownFloatingPointNormalizedTransformer(
           replaceWithExpressionTransformer(k.child, attributeSeq),

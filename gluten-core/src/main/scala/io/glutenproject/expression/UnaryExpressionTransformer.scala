@@ -44,11 +44,7 @@ class KnownFloatingPointNormalizedTransformer(
   }
 }
 
-class CastTransformer(
-    child: ExpressionTransformer,
-    datatype: DataType,
-    timeZoneId: Option[String],
-    original: Expression)
+class CastTransformer(child: ExpressionTransformer, datatype: DataType, original: Expression)
   extends ExpressionTransformer
   with Logging {
 

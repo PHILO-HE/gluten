@@ -17,7 +17,6 @@
 
 #include "SubstraitToVeloxPlanValidator.h"
 #include <google/protobuf/wrappers.pb.h>
-#include <re2/re2.h>
 #include <string>
 #include "TypeUtils.h"
 #include "utils/Common.h"
@@ -273,9 +272,9 @@ bool SubstraitToVeloxPlanValidator::validateCast(
 
   // Casting from some types is not supported. See CastExpr::applyCast.
   switch (input->type()->kind()) {
-    case TypeKind::ARRAY:
-    case TypeKind::MAP:
-    case TypeKind::ROW:
+    // case TypeKind::ARRAY:
+    // case TypeKind::MAP:
+    // case TypeKind::ROW:
     case TypeKind::VARBINARY:
       logValidateMsg("native validation failed due to: Invalid input type in casting: ARRAY/MAP/ROW/VARBINARY");
       return false;
