@@ -22,10 +22,12 @@ import io.glutenproject.extension.columnar._
 import io.glutenproject.utils.PhysicalPlanSelector
 
 import org.apache.spark.sql.{SparkSession, SparkSessionExtensions}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{Final, Partial}
 import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{ColumnarBroadcastExchangeExec, SparkPlan}
-import org.apache.spark.sql.execution.exchange.BroadcastExchangeExec
+import org.apache.spark.sql.execution.aggregate.ObjectHashAggregateExec
+import org.apache.spark.sql.execution.exchange.{BroadcastExchangeExec, Exchange}
 import org.apache.spark.sql.execution.joins.BroadcastHashJoinExec
 
 // BroadcastHashJoinExec and it's child BroadcastExec will be cut into different QueryStages,
@@ -91,9 +93,51 @@ case class FallbackBroadcastExchange(session: SparkSession) extends Rule[SparkPl
   }
 }
 
+case class FallbackAggregate(session: SparkSession) extends Rule[SparkPlan] {
+  override def apply(plan: SparkPlan): SparkPlan = PhysicalPlanSelector.maybe(session, plan) {
+    plan.foreach {
+      case agg: ObjectHashAggregateExec if agg.aggregateExpressions.forall(_.mode.equals(Final)) =>
+        val transformer = BackendsApiManager.getSparkPlanExecApiInstance
+          .genHashAggregateExecTransformer(
+            agg.requiredChildDistributionExpressions,
+            agg.groupingExpressions,
+            agg.aggregateExpressions,
+            agg.aggregateAttributes,
+            agg.initialInputBufferOffset,
+            agg.resultExpressions,
+            agg.child
+          )
+        val validateResult = transformer.doValidate()
+        if (!validateResult.isValid) {
+          TransformHints.tagNotTransformable(agg, validateResult.reason.get)
+          agg.child match {
+            case ex: Exchange =>
+              ex.child match {
+                case partialAgg: ObjectHashAggregateExec
+                    if partialAgg.aggregateExpressions.forall(_.mode.equals(Partial)) =>
+                  TransformHints.tagNotTransformable(
+                    partialAgg,
+                    "Make partial agg fall back as final agg falls back")
+                case _ =>
+              }
+            case partialAgg: ObjectHashAggregateExec
+                if partialAgg.aggregateExpressions.forall(_.mode.equals(Partial)) =>
+              TransformHints.tagNotTransformable(
+                partialAgg,
+                "Make partial agg fall back as final agg falls back")
+            case _ =>
+          }
+        }
+      case _ =>
+    }
+    plan
+  }
+}
+
 object ColumnarQueryStagePrepOverrides extends GlutenSparkExtensionsInjector {
   override def inject(extensions: SparkSessionExtensions): Unit = {
-    val builders = TagBeforeTransformHits.ruleBuilders :+ FallbackBroadcastExchange
+    val builders =
+      TagBeforeTransformHits.ruleBuilders :+ FallbackBroadcastExchange :+ FallbackAggregate
     builders.foreach(extensions.injectQueryStagePrepRule)
   }
 }
