@@ -96,7 +96,7 @@ case class FallbackBroadcastExchange(session: SparkSession) extends Rule[SparkPl
 case class FallbackAggregate(session: SparkSession) extends Rule[SparkPlan] {
   override def apply(plan: SparkPlan): SparkPlan = PhysicalPlanSelector.maybe(session, plan) {
     plan.foreach {
-      case agg: ObjectHashAggregateExec if agg.aggregateExpressions.forall(_.mode.equals(Final)) =>
+      case agg: ObjectHashAggregateExec if agg.aggregateExpressions.forall(_.mode == Final) =>
         val transformer = BackendsApiManager.getSparkPlanExecApiInstance
           .genHashAggregateExecTransformer(
             agg.requiredChildDistributionExpressions,
@@ -114,17 +114,12 @@ case class FallbackAggregate(session: SparkSession) extends Rule[SparkPlan] {
             case ex: Exchange =>
               ex.child match {
                 case partialAgg: ObjectHashAggregateExec
-                    if partialAgg.aggregateExpressions.forall(_.mode.equals(Partial)) =>
+                    if partialAgg.aggregateExpressions.forall(_.mode == Partial) =>
                   TransformHints.tagNotTransformable(
                     partialAgg,
                     "Make partial agg fall back as final agg falls back")
                 case _ =>
               }
-            case partialAgg: ObjectHashAggregateExec
-                if partialAgg.aggregateExpressions.forall(_.mode.equals(Partial)) =>
-              TransformHints.tagNotTransformable(
-                partialAgg,
-                "Make partial agg fall back as final agg falls back")
             case _ =>
           }
         }
