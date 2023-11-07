@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate.{Final, Partial}
 import org.apache.spark.sql.catalyst.optimizer.{BuildLeft, BuildRight}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{ColumnarBroadcastExchangeExec, SparkPlan}
-import org.apache.spark.sql.execution.aggregate.ObjectHashAggregateExec
+import org.apache.spark.sql.execution.aggregate.{BaseAggregateExec, ObjectHashAggregateExec, SortAggregateExec}
 import org.apache.spark.sql.execution.exchange.{BroadcastExchangeExec, Exchange}
 import org.apache.spark.sql.execution.joins.BroadcastHashJoinExec
 
@@ -94,20 +94,27 @@ case class FallbackBroadcastExchange(session: SparkSession) extends Rule[SparkPl
 }
 
 case class FallbackAggregate(session: SparkSession) extends Rule[SparkPlan] {
+
+  def validateHashAggregate(
+      agg: BaseAggregateExec,
+      initialInputBufferOffset: Int): ValidationResult = {
+    val transformer = BackendsApiManager.getSparkPlanExecApiInstance
+      .genHashAggregateExecTransformer(
+        agg.requiredChildDistributionExpressions,
+        agg.groupingExpressions,
+        agg.aggregateExpressions,
+        agg.aggregateAttributes,
+        initialInputBufferOffset,
+        agg.resultExpressions,
+        agg.child
+      )
+    transformer.doValidate()
+  }
+
   override def apply(plan: SparkPlan): SparkPlan = PhysicalPlanSelector.maybe(session, plan) {
     plan.foreach {
       case agg: ObjectHashAggregateExec if agg.aggregateExpressions.forall(_.mode == Final) =>
-        val transformer = BackendsApiManager.getSparkPlanExecApiInstance
-          .genHashAggregateExecTransformer(
-            agg.requiredChildDistributionExpressions,
-            agg.groupingExpressions,
-            agg.aggregateExpressions,
-            agg.aggregateAttributes,
-            agg.initialInputBufferOffset,
-            agg.resultExpressions,
-            agg.child
-          )
-        val validateResult = transformer.doValidate()
+        val validateResult = validateHashAggregate(agg, agg.initialInputBufferOffset)
         if (!validateResult.isValid) {
           TransformHints.tagNotTransformable(agg, validateResult.reason.get)
           agg.child match {
@@ -117,7 +124,24 @@ case class FallbackAggregate(session: SparkSession) extends Rule[SparkPlan] {
                     if partialAgg.aggregateExpressions.forall(_.mode == Partial) =>
                   TransformHints.tagNotTransformable(
                     partialAgg,
-                    "Make partial agg fall back as final agg falls back")
+                    "Make partial agg fall back because final agg falls back.")
+                case _ =>
+              }
+            case _ =>
+          }
+        }
+      case agg: SortAggregateExec if agg.aggregateExpressions.forall(_.mode == Final) =>
+        val validateResult = validateHashAggregate(agg, agg.initialInputBufferOffset)
+        if (!validateResult.isValid) {
+          TransformHints.tagNotTransformable(agg, validateResult.reason.get)
+          agg.child match {
+            case ex: Exchange =>
+              ex.child match {
+                case partialAgg: SortAggregateExec
+                    if partialAgg.aggregateExpressions.forall(_.mode == Partial) =>
+                  TransformHints.tagNotTransformable(
+                    partialAgg,
+                    "Make partial agg fall back because final agg falls back.")
                 case _ =>
               }
             case _ =>
