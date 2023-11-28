@@ -266,7 +266,12 @@ macro(find_gcssdk)
   find_package(google_cloud_cpp_storage REQUIRED)
 endmacro()
 
-
+list(APPEND CMAKE_PREFIX_PATH "${VELOX_BUILD_PATH}/_deps")
+macro(resolve_dependency dependency_name)
+  set(find_package_args ${dependency_name} ${ARGN})
+  list(REMOVE_ITEM find_package_args QUIET)
+  find_package(${find_package_args} REQUIRED)
+endmacro()
 
 # Build Velox backend.
 set(VELOX_SRCS
