@@ -5,7 +5,10 @@
   "homepage": "https://github.com/grpc/grpc",
   "license": "Apache-2.0",
   "dependencies": [
-    "abseil",
+    {
+      "name": "abseil",
+       "version>=": "20240116"
+    },
     {
       "name": "c-ares",
       "platform": "!uwp"
