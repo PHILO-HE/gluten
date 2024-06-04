@@ -1,15 +1,11 @@
 {
   "name": "grpc",
-  "version-semver": "1.51.1",
-  "port-version": 1,
+  "version-semver": "1.48.0",
   "description": "An RPC library and framework",
   "homepage": "https://github.com/grpc/grpc",
   "license": "Apache-2.0",
   "dependencies": [
-    {
-      "name": "abseil",
-      "version>=": "20240116"
-    },
+    "abseil",
     {
       "name": "c-ares",
       "platform": "!uwp"
@@ -44,8 +40,7 @@
       "description": "Deprecated."
     },
     "codegen": {
-      "description": "Build code generator machinery",
-      "supports": "!uwp"
+      "description": "Build code generator machinery"
     }
   }
 }
