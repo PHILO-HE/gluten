@@ -17,6 +17,9 @@ RUN git clone --depth=1 https://github.com/apache/incubator-gluten /opt/gluten
 
 RUN echo "check_certificate = off" >> ~/.wgetrc
 
+# Required by some Spark UTs. The resource path should be set for spark.test.home in mvn test.
+RUN bash .github/workflows/util/install_spark_resources.sh
+
 RUN cd /opt/gluten && bash ./dev/vcpkg/setup-build-depends.sh
 
 # An actual path used for vcpkg cache.

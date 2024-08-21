@@ -21,6 +21,7 @@ on:
       - main
     paths:
       - '.github/workflows/docker_image.yml'
+      - 'dev/vcpkg/docker/Dockerfile.gha'
   schedule:
     - cron: '0 20 * * 0'
 
