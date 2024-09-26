@@ -41,11 +41,10 @@ macro(build_jemalloc)
       "CC=${CMAKE_C_COMPILER}"
       "--prefix=${JEMALLOC_PREFIX}"
       "--libdir=${JEMALLOC_LIB_DIR}"
-      # The below prefix can be enabled if jemalloc is used in some selective code for debugging or profiling.
-      # "--with-jemalloc-prefix=je_gluten_"
-      # "--with-private-namespace=je_gluten_private_"
-      # This should be commented for dynamically linking.
-      # "--without-export"
+      # The below prefix can be enabled if jemalloc is used in some selective
+      # code for debugging or profiling. "--with-jemalloc-prefix=je_gluten_"
+      # "--with-private-namespace=je_gluten_private_" This should be commented
+      # for dynamically linking. "--without-export"
       "--disable-cxx"
       "--disable-libdl"
       # For fixing an issue when loading native lib: cannot allocate memory in
