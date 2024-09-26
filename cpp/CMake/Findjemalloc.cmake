@@ -29,9 +29,9 @@ macro(find_jemalloc)
   else()
     message(STATUS "Found jemalloc: ${JEMALLOC_LIBRARY}")
     find_path(JEMALLOC_INCLUDE_DIR jemalloc/jemalloc.h)
-    add_library(jemalloc::libjemalloc SHARED IMPORTED)
+    add_library(jemalloc::jemalloc SHARED IMPORTED)
     set_target_properties(
-      jemalloc::libjemalloc
+      jemalloc::jemalloc
       PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${JEMALLOC_INCLUDE_DIR}"
                  IMPORTED_LOCATION "${JEMALLOC_LIBRARY}")
   endif()
