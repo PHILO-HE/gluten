@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.optimizer.{BuildSide, JoinSelectionHelper}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
 import org.apache.spark.sql.catalyst.plans.InnerLike
 import org.apache.spark.sql.catalyst.plans.JoinType
-import org.apache.spark.sql.catalyst.plans.logical.{HintInfo, JoinHint, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{BROADCAST, HintInfo, JoinHint, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.internal.SQLConf
 
@@ -56,6 +56,24 @@ object Helper extends JoinSelectionHelper {
       }
     }
   }
+
+  override def hintToBroadcastLeft(hint: JoinHint): Boolean = {
+    hint.leftHint.exists(_.strategy.contains(BROADCAST))
+  }
+
+  override def canBroadcastBySize(plan: LogicalPlan, conf: SQLConf): Boolean = {
+    val autoBroadcastJoinThreshold = if (plan.stats.isRuntime) {
+      conf
+        .getConf(SQLConf.ADAPTIVE_AUTO_BROADCASTJOIN_THRESHOLD)
+        .getOrElse(conf.autoBroadcastJoinThreshold)
+    } else {
+      conf.autoBroadcastJoinThreshold
+    }
+    // BHJ perf. will be degraded if a large table is broadcast.
+    // Use 100MB to override user's setting.
+    val empiricalThreshold = autoBroadcastJoinThreshold.min(100 * 1024 * 1024)
+    plan.stats.sizeInBytes >= 0 && plan.stats.sizeInBytes <= empiricalThreshold
+  }
 }
 
 case class RewriteBroadcastHashJoinSelection(spark: SparkSession) extends Strategy {
@@ -75,7 +93,7 @@ case class RewriteBroadcastHashJoinSelection(spark: SparkSession) extends Strate
             hint) =>
         def createBroadcastHashJoin(onlyLookingAtHint: Boolean) = {
           val buildSide =
-            getBroadcastBuildSide(left, right, joinType, hint, onlyLookingAtHint, conf)
+            Helper.getBroadcastBuildSide(left, right, joinType, hint, onlyLookingAtHint, conf)
           Helper.checkHintBuildSide(onlyLookingAtHint, buildSide, joinType, hint, true)
           buildSide.map {
             buildSide =>
