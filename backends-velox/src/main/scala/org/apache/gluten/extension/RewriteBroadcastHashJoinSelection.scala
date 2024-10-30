@@ -144,7 +144,7 @@ case class RewriteBroadcastHashJoinSelection(spark: SparkSession) extends Strate
         }
 
         def createCartesianProduct() = {
-          if (joinType.isInstanceOf[InnerLike] && !hintToNotBroadcastAndReplicate(hint)) {
+          if (joinType.isInstanceOf[InnerLike] && !Helper.hintToNotBroadcastAndReplicate(hint)) {
             // `CartesianProductExec` can't implicitly evaluate equal join condition, here we should
             // pass the original condition which includes both equal and non-equal conditions.
             Some(
@@ -165,7 +165,7 @@ case class RewriteBroadcastHashJoinSelection(spark: SparkSession) extends Strate
               // This join could be very slow or OOM
               // Build the smaller side unless the join requires a particular build side
               // (e.g. NO_BROADCAST_AND_REPLICATION hint)
-              val requiredBuildSide = getBroadcastNestedLoopJoinBuildSide(hint)
+              val requiredBuildSide = Helper.getBroadcastNestedLoopJoinBuildSide(hint)
               val buildSide = requiredBuildSide.getOrElse(getSmallerSide(left, right))
               Seq(
                 org.apache.spark.sql.execution.joins.BroadcastNestedLoopJoinExec(
