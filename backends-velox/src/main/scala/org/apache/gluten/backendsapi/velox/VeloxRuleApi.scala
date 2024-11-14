@@ -45,6 +45,7 @@ private object VeloxRuleApi {
     // Inject the regular Spark rules directly.
     injector.injectOptimizerRule(CollectRewriteRule.apply)
     injector.injectOptimizerRule(HLLRewriteRule.apply)
+    injector.injectOptimizerRule(spark => new ExtendedGeneratorNestedColumnAliasing(spark))
     injector.injectPostHocResolutionRule(ArrowConvertorRule.apply)
   }
 
