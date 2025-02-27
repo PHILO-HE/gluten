@@ -47,6 +47,7 @@
     <module>gluten-ras</module>
     <module>package</module>
     <module>shims</module>
+    <module>gluten-ui/common</module>
   </modules>
 
   <properties>
