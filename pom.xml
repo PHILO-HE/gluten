@@ -165,19 +165,24 @@
     <profile>
       <id>scala-2.12</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>scala.binary.version</name>
+          <value>2.12</value>
+        </property>
       </activation>
       <properties>
-        <!--
-         SPARK-34774 Add this property to ensure change-scala-version.sh can replace the public `scala.version`
-         property correctly.
-        -->
         <scala.version>2.12.15</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
       </properties>
     </profile>
     <profile>
       <id>scala-2.13</id>
+      <activation>
+        <property>
+          <name>scala.binary.version</name>
+          <value>2.13</value>
+        </property>
+      </activation>
       <properties>
         <scala.version>2.13.8</scala.version>
         <scala.binary.version>2.13</scala.binary.version>
