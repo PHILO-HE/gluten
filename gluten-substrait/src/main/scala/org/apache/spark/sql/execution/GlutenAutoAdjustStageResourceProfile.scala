@@ -45,7 +45,7 @@ import scala.collection.mutable.ArrayBuffer
  *      support it.
  */
 @Experimental
-case class GlutenAutoAdjustStageResourceProfile(glutenConf: GlutenConfig, spark: SparkSession)
+case class GlutenResourceProfileRule(glutenConf: GlutenConfig, spark: SparkSession)
   extends Rule[SparkPlan]
   with LogLevelUtil {
 
