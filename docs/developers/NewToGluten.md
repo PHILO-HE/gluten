@@ -25,7 +25,7 @@ JDK 11 as the minimum version.
 By default, Gluten compiles packages using JDK 8. Enable maven profile by `-Pjava-17` or `-Pjava-11` to use the corresponding JDK version, and ensure that the JDK version is available in your environment.
 
 If JDK 11 or a higher version is used, Spark and Arrow require setting the java args `-Dio.netty.tryReflectionSetAccessible=true`, see [SPARK-29924](https://issues.apache.org/jira/browse/SPARK-29924) and [ARROW-6206](https://issues.apache.org/jira/browse/ARROW-6206).
-So add the following configs in `spark-defaults.conf`:
+Add the following configs in `spark-defaults.conf`:
 
 ```
 spark.driver.extraJavaOptions=-Dio.netty.tryReflectionSetAccessible=true
@@ -56,16 +56,17 @@ Note: To debug the tests in <gluten>/gluten-ut, you must compile java code with 
 Install the Linux IntelliJ version, and debug code locally.
 
 - Ask your linux maintainer to install the desktop, and then restart the server.
-- If you use Moba-XTerm to connect linux server, you don't need to install x11 server, If not (e.g. putty), follow this guide:
-[X11 Forwarding: Setup Instructions for Linux and Mac](https://www.businessnewsdaily.com/11035-how-to-use-x11-forwarding.html)
+- If you use Moba-XTerm to connect, you don't need to install x11 server. If you are using another tool, such as putty, follow this guide:
+  [X11 Forwarding: Setup Instructions for Linux and Mac](https://www.businessnewsdaily.com/11035-how-to-use-x11-forwarding.html)
 
-- Download [IntelliJ Linux community version](https://www.jetbrains.com/idea/download/?fromIDE=#section=linux) to Linux server
-- Start Idea, `bash <idea_dir>/idea.sh`
+- Download [IntelliJ Linux community version](https://www.jetbrains.com/idea/download/?fromIDE=#section=linux) to Linux server.
+- Start Idea using the following command:
+  `bash <idea_dir>/idea.sh`
 
 #### Set up Gluten project
 
 - Make sure you have compiled Gluten.
-- Load the Gluten by File->Open, select <gluten_home/pom.xml>.
+- Load the Gluten by **File**->**Open**, select **<gluten_home/pom.xml>**.
 - Activate your profiles such as `<backends-velox>`, then **Reload Maven Project** to activate all the needed modules.
 - Create breakpoints and debug as you wish. You can use `CTRL+N` to locate a test class to start your test.
 
