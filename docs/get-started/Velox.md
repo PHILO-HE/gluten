@@ -284,6 +284,8 @@ spark.celeborn.storage.hdfs.dir hdfs://<namenode>/celeborn
 spark.dynamicAllocation.enabled false
 ```
 
+
+
 Additionally, for sort-based shuffle, Celeborn supports two types of shuffle writers: the default row-based sort shuffle writer and the RSS sort shuffle writer.
 By default, Celeborn uses the RSS sort shuffle writer. You can switch to the default row-based sort shuffle writer
 by setting the following configuration:
