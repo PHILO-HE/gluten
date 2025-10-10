@@ -25,7 +25,7 @@ on:
 jobs:
   process:
     name: link-referenced-issues
-    if: ${{ startsWith(github.repository, 'apache/') }}
+#    if: ${{ startsWith(github.repository, 'apache/') }}
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
