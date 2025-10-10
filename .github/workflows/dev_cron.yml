@@ -39,5 +39,5 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const script = require(`${process.env.GITHUB_WORKSPACE}/.github/workflows/dev_cron/issues_link.js`);
+            const script = require(`${process.env.GITHUB_WORKSPACE}/.github/workflows/dev_cron/pr_issue_linker.js`);
             script({github, context});
