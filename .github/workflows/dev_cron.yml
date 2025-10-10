@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Dev PR
+name: Link Referenced Issue
 
 on:
-
   pull_request_target:
     types:
       - opened
@@ -25,7 +24,8 @@ on:
 
 jobs:
   process:
-    name: Process
+    name: update-pr-description
+    if: ${{ startsWith(github.repository, 'apache/') }}
     runs-on: ubuntu-latest
     permissions: write-all
     steps:

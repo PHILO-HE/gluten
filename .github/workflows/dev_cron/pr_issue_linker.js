@@ -29,7 +29,8 @@ function detectIssueID(title) {
 }
 
 async function appendToPRDescription(github, context, pullRequestNumber, issuesID) {
-  const issuesURL = `https://github.com/apache/incubator-gluten/issues/${issuesID}`;
+  const issueURL = `https://github.com/apache/incubator-gluten/issues/${issuesID}`;
+  const issueReference = `#${issuesID}`
 
   // Fetch the current PR description.
   const { data: pullRequest } = await github.rest.pulls.get({
@@ -40,13 +41,13 @@ async function appendToPRDescription(github, context, pullRequestNumber, issuesI
 
   const currentBody = pullRequest.body || "";
 
-  // Check if the issues URL is already in the PR description.
-  if (currentBody.includes(issuesURL)) {
+  // Check if the issues URL or reference is already in the PR description.
+  if (currentBody.includes(issueURL) || currentBody.includes(issueReference)) {
     return;
   }
 
   // Append the issues URL to the PR description.
-  const updatedBody = `${currentBody}\n\nRelated issue: ${issuesURL}`;
+  const updatedBody = `${currentBody}\n\nRelated issue: ${issueReference}`;
 
   // Update the PR description.
   await github.rest.pulls.update({
