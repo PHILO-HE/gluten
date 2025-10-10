@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Link Referenced Issue
+name: Dev PR
 
 on:
   pull_request_target:
@@ -24,17 +24,17 @@ on:
 
 jobs:
   process:
-    name: update-pr-description
+    name: link-referenced-issues
     if: ${{ startsWith(github.repository, 'apache/') }}
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - name: Comment Issues link
+      - name: Link referenced issues
         if: |
-          github.event_name == 'pull_request_target' &&
-            (github.event.action == 'opened' ||
-             github.event.action == 'edited')
+          github.event.action == 'opened' ||
+          github.event.action == 'edited'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
