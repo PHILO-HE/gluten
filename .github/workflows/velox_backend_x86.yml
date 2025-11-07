@@ -41,7 +41,6 @@ on:
   workflow_dispatch:
     inputs:
       spark_test_image:
-        description: "Docker image to use"
         required: true
         default: apache/gluten:centos-8-jdk8
 
@@ -61,6 +60,7 @@ concurrency:
 jobs:
   build-native-lib-centos-7:
     runs-on: ubuntu-22.04
+    container: ${{ inputs.spark_test_image }}
     steps:
       - uses: actions/checkout@v4
       - name: Get Ccache
@@ -72,6 +72,7 @@ jobs:
             ccache-centos7-release-default
       - name: Build Gluten native libraries
         run: |
+          cat /etc/os-release
           docker pull apache/gluten:vcpkg-centos-7
           docker run -v $GITHUB_WORKSPACE:/work -w /work apache/gluten:vcpkg-centos-7 bash -c "
             set -e
@@ -907,7 +908,6 @@ jobs:
   spark-test-spark35:
     needs: build-native-lib-centos-7
     runs-on: ubuntu-22.04
-    container: ${{ inputs.SPARK_TEST_IMAGE }}
     steps:
       - uses: actions/checkout@v2
       - name: Download All Artifacts
