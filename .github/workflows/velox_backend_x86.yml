@@ -47,6 +47,7 @@ env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   # spark.sql.ansi.enabled defaults to false.
   SPARK_ANSI_SQL_MODE: false
+  SPARK_TEST_IMAGE: apache/gluten:centos-8-jdk8
 
 concurrency:
   group: ${{ github.repository }}-${{ github.head_ref || github.sha }}-${{ github.workflow }}
@@ -899,9 +900,11 @@ jobs:
             **/gluten-ut/**/core.*
 
   spark-test-spark35:
+    env:
+      SPARK_TEST_IMAGE: ${{ env.SPARK_TEST_IMAGE }}
     needs: build-native-lib-centos-7
     runs-on: ubuntu-22.04
-    container: apache/gluten:centos-8-jdk8
+    container: ${{ env.SPARK_TEST_IMAGE }}
     steps:
       - uses: actions/checkout@v2
       - name: Download All Artifacts
