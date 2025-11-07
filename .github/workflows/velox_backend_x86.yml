@@ -38,6 +38,12 @@ on:
       - 'ep/build-velox/**'
       - 'cpp/**'
       - 'dev/**'
+  workflow_dispatch:
+    inputs:
+      spark_test_image:
+        description: "Docker image to use"
+        required: true
+        default: apache/gluten:centos-8-jdk8
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -47,7 +53,6 @@ env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   # spark.sql.ansi.enabled defaults to false.
   SPARK_ANSI_SQL_MODE: false
-  SPARK_TEST_IMAGE: apache/gluten:centos-8-jdk8
 
 concurrency:
   group: ${{ github.repository }}-${{ github.head_ref || github.sha }}-${{ github.workflow }}
@@ -900,11 +905,9 @@ jobs:
             **/gluten-ut/**/core.*
 
   spark-test-spark35:
-    env:
-      SPARK_TEST_IMAGE: ${{ env.SPARK_TEST_IMAGE }}
     needs: build-native-lib-centos-7
     runs-on: ubuntu-22.04
-    container: ${{ env.SPARK_TEST_IMAGE }}
+    container: ${{ inputs.SPARK_TEST_IMAGE }}
     steps:
       - uses: actions/checkout@v2
       - name: Download All Artifacts
