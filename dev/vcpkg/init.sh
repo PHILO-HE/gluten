@@ -68,13 +68,9 @@ SCRIPT_ROOT="$(realpath "$(dirname "$0")")"
 cd "$SCRIPT_ROOT"
 
 if [ ! -d "$VCPKG_ROOT" ] || [ -z "$(ls "$VCPKG_ROOT")" ]; then
-    git clone https://github.com/microsoft/vcpkg.git --branch 2025.10.17 "$VCPKG_ROOT"
+    git clone https://github.com/microsoft/vcpkg.git --branch 2025.09.17 "$VCPKG_ROOT"
 fi
 [ -f "$VCPKG" ] || "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
-
-pushd $VCPKG_ROOT
-git apply $SCRIPT_ROOT/fix-build.patch
-popd
 
 EXTRA_FEATURES=""
 if [ "$BUILD_TESTS" = "ON" ]; then
