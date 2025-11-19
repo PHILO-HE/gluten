@@ -26,6 +26,7 @@ on:
       - 'dev/docker/cudf/*'
   schedule:
     - cron: '0 20 * * 0'
+  workflow_dispatch:
 
 env:
   DOCKERHUB_REPO: apache/gluten
