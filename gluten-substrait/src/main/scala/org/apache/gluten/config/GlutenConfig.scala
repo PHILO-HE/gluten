@@ -606,6 +606,9 @@ object GlutenConfig {
           GlutenCoreConfig.NUM_TASK_SLOTS_PER_EXECUTOR.defaultValueString)),
       (COLUMNAR_SHUFFLE_CODEC.key, ""),
       (COLUMNAR_SHUFFLE_CODEC_BACKEND.key, ""),
+      (
+        COLUMNAR_SHUFFLE_SW_COMPRESS_THRESHOLD.key,
+        COLUMNAR_SHUFFLE_SW_COMPRESS_THRESHOLD.defaultValueString),
       (DEBUG_CUDF.key, DEBUG_CUDF.defaultValueString),
       ("spark.hadoop.input.connect.timeout", "180000"),
       ("spark.hadoop.input.read.timeout", "180000"),
@@ -1028,6 +1031,13 @@ object GlutenConfig {
     buildConf("spark.gluten.sql.columnar.shuffle.codecBackend").stringConf
       .transform(_.toLowerCase(Locale.ROOT))
       .createOptional
+
+  val COLUMNAR_SHUFFLE_SW_COMPRESS_THRESHOLD =
+    buildConf("spark.gluten.sql.columnar.shuffle.swCompressThreshold")
+      .doc("For buffer size lower than this config value in bytes, directly fall back to software" +
+        " compression instead of offloading to QAT. It's only effective for zstd codec currently.")
+      .bytesConf(ByteUnit.BYTE)
+      .createWithDefaultString("4KB")
 
   val COLUMNAR_SHUFFLE_COMPRESSION_MODE =
     buildConf("spark.gluten.sql.columnar.shuffle.compressionMode")
