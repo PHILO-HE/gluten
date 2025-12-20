@@ -25,6 +25,7 @@
 #include <mutex>
 
 #include "QatCodec.h"
+#include "utils/Exception.h"
 
 #define QZ_INIT_FAIL(rc) ((QZ_OK != (rc)) && (QZ_DUPLICATE != (rc)))
 
@@ -64,6 +65,15 @@ class QatZipCodec : public arrow::util::Codec {
   }
 
   arrow::Result<int64_t> Compress(int64_t inputLen, const uint8_t* input, int64_t outputLen, uint8_t* output) override {
+    /** maxInputLen = std::max(maxInputLen, (int32_t)inputLen);
+    minInputLen = std::min(minInputLen, (int32_t)inputLen);
+    inputLenSum += inputLen;
+    requestCount += 1;
+    ARROW_LOG(INFO) << "max=" << static_cast<double>(maxInputLen) / 1024 << "KB"
+                    << ", min=" << static_cast<double>(minInputLen) / 1024 << "KB"
+                    << ", average=" << static_cast<double>(inputLenSum) / (requestCount * 1024) << "KB"
+                    << ", count=" << requestCount;
+    **/
     uint32_t uncompressedSize = static_cast<uint32_t>(inputLen);
     uint32_t compressedSize = static_cast<uint32_t>(outputLen);
     int ret = qzCompress(&qzSession_, input, &uncompressedSize, output, &compressedSize, 1);
@@ -92,12 +102,17 @@ class QatZipCodec : public arrow::util::Codec {
 
   int compressionLevel_;
   QzSession_T qzSession_ = {0};
+
+  int32_t maxInputLen = 0;
+  int32_t minInputLen = std::numeric_limits<int32_t>::max();
+  int64_t inputLenSum = 0;
+  int32_t requestCount = 0;
 };
 
 class QatGZipCodec final : public QatZipCodec {
  public:
   QatGZipCodec(QzPollingMode_T pollingMode, int compressionLevel) : QatZipCodec(compressionLevel) {
-    auto rc = qzInit(&qzSession_, /* sw_backup = */ 1);
+    auto rc = qzInit(&qzSession_, /* sw_backup = */ 0);
     if (QZ_INIT_FAIL(rc)) {
       ARROW_LOG(WARNING) << "qzInit failed with error: " << rc;
     } else {
@@ -138,7 +153,7 @@ std::unique_ptr<arrow::util::Codec> makeQatGZipCodec(QzPollingMode_T pollingMode
 }
 
 std::unique_ptr<arrow::util::Codec> makeDefaultQatGZipCodec() {
-  return makeQatGZipCodec(QZ_BUSY_POLLING, QZ_COMP_LEVEL_DEFAULT);
+  return makeQatGZipCodec(QZ_PERIODICAL_POLLING, QZ_COMP_LEVEL_DEFAULT);
 }
 
 namespace {
@@ -188,7 +203,8 @@ class QatDevice {
 
 class QatZstdCodec final : public arrow::util::Codec {
  public:
-  explicit QatZstdCodec(int compressionLevel) : compressionLevel_(compressionLevel) {}
+  explicit QatZstdCodec(int compressionLevel, int64_t swCompressThreshold)
+      : compressionLevel_(compressionLevel), swCompressThreshold_(swCompressThreshold) {}
 
   ~QatZstdCodec() {
     if (initCCtx_) {
@@ -229,8 +245,23 @@ class QatZstdCodec final : public arrow::util::Codec {
   }
 
   arrow::Result<int64_t> Compress(int64_t inputLen, const uint8_t* input, int64_t outputLen, uint8_t* output) override {
+    /** maxInputLen = std::max(maxInputLen, (int32_t)inputLen);
+    minInputLen = std::min(minInputLen, (int32_t)inputLen);
+    inputLenSum += inputLen;
+    requestCount += 1;
+    ARROW_LOG(INFO) << "max=" << static_cast<double>(maxInputLen) / 1024 << "KB"
+                    << ", min=" << static_cast<double>(minInputLen) / 1024 << "KB"
+                    << ", average=" << static_cast<double>(inputLenSum) / (requestCount * 1024) << "KB"
+                    << ", count=" << requestCount;
+    **/
     RETURN_NOT_OK(initCCtx());
-    size_t ret = ZSTD_compress2(zc_, output, static_cast<size_t>(outputLen), input, static_cast<size_t>(inputLen));
+    size_t ret;
+    if (inputLen < swCompressThreshold_) { // Directly fall back to software compression.
+      GLUTEN_ASSIGN_OR_THROW(int64_t compressSize, swCodec_->Compress(inputLen, input, outputLen, output));
+      ret = (size_t)compressSize;
+    } else {
+      ret = ZSTD_compress2(zc_, output, static_cast<size_t>(outputLen), input, static_cast<size_t>(inputLen));
+    }
     if (ZSTD_isError(ret)) {
       return ZSTDError(ret, "ZSTD compression failed: ");
     }
@@ -263,9 +294,16 @@ class QatZstdCodec final : public arrow::util::Codec {
   int compressionLevel_;
   ZSTD_CCtx* zc_;
   bool initCCtx_{false};
+  std::unique_ptr<arrow::util::Codec> swCodec_;
+  int64_t swCompressThreshold_;
 
   std::shared_ptr<QatDevice> qatDevice_;
   void* sequenceProducerState_{nullptr};
+
+  int32_t maxInputLen = 0;
+  int32_t minInputLen = std::numeric_limits<int32_t>::max();
+  int64_t inputLenSum = 0;
+  int32_t requestCount = 0;
 
   arrow::Status initCCtx() {
     if (initCCtx_) {
@@ -287,17 +325,18 @@ class QatZstdCodec final : public arrow::util::Codec {
           ZSTD_CCtx_setParameter(zc_, ZSTD_c_enableSeqProducerFallback, 1),
           "ZSTD_CCtx_setParameter failed on  ZSTD_c_enableSeqProducerFallback: ");
     }
+    GLUTEN_ASSIGN_OR_THROW(swCodec_, arrow::util::Codec::Create(arrow::Compression::ZSTD, compressionLevel_));
     initCCtx_ = true;
     return arrow::Status::OK();
   }
 };
 
-std::unique_ptr<arrow::util::Codec> makeQatZstdCodec(int compressionLevel) {
-  return std::unique_ptr<arrow::util::Codec>(new QatZstdCodec(compressionLevel));
+std::unique_ptr<arrow::util::Codec> makeQatZstdCodec(int compressionLevel, int64_t swCompressThreshold) {
+  return std::unique_ptr<arrow::util::Codec>(new QatZstdCodec(compressionLevel, swCompressThreshold));
 }
 
-std::unique_ptr<arrow::util::Codec> makeDefaultQatZstdCodec() {
-  return makeQatZstdCodec(kZSTDDefaultCompressionLevel);
+std::unique_ptr<arrow::util::Codec> makeDefaultQatZstdCodec(int64_t swCompressThreshold) {
+  return makeQatZstdCodec(kZSTDDefaultCompressionLevel, swCompressThreshold);
 }
 
 } // namespace qat

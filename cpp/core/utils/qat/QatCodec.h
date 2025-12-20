@@ -32,8 +32,8 @@ std::unique_ptr<arrow::util::Codec> makeQatGZipCodec(QzPollingMode_T pollingMode
 
 std::unique_ptr<arrow::util::Codec> makeDefaultQatGZipCodec();
 
-std::unique_ptr<arrow::util::Codec> makeQatZstdCodec(int compressionLevel);
+std::unique_ptr<arrow::util::Codec> makeQatZstdCodec(int compressionLevel, int64_t swCompressThreshold);
 
-std::unique_ptr<arrow::util::Codec> makeDefaultQatZstdCodec();
+std::unique_ptr<arrow::util::Codec> makeDefaultQatZstdCodec(int64_t swCompressThreshold);
 } // namespace qat
 } // namespace gluten

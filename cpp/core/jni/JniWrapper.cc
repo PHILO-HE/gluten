@@ -812,6 +812,11 @@ Java_org_apache_gluten_vectorized_LocalPartitionWriterJniWrapper_createPartition
   JNI_METHOD_START
 
   const auto ctx = getRuntime(env, wrapper);
+  auto& conf = ctx->getConfMap();
+  int64_t swCompressThreshold;
+  auto it = conf.find(kShuffleSwCompressThreshold);
+  GLUTEN_CHECK(!(it == conf.end()), "Required key not found in runtime config: " + kShuffleSwCompressThreshold);
+  swCompressThreshold = std::stoll(it->second);
 
   auto dataFile = jStringToCString(env, dataFileJstr);
   auto localDirs = splitPaths(jStringToCString(env, localDirsJstr));
@@ -827,7 +832,11 @@ Java_org_apache_gluten_vectorized_LocalPartitionWriterJniWrapper_createPartition
 
   auto partitionWriter = std::make_shared<LocalPartitionWriter>(
       numPartitions,
-      createArrowIpcCodec(getCompressionType(env, codecJstr), getCodecBackend(env, codecBackendJstr), compressionLevel),
+      createArrowIpcCodec(
+          getCompressionType(env, codecJstr),
+          getCodecBackend(env, codecBackendJstr),
+          compressionLevel,
+          swCompressThreshold),
       ctx->memoryManager(),
       partitionWriterOptions,
       dataFile,

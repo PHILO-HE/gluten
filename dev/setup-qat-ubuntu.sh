@@ -25,8 +25,8 @@ ZSTD_VERSION="zstd-1.5.5"
 ZSTD_URL="https://github.com/facebook/zstd/releases/download/v1.5.5/${ZSTD_VERSION}.tar.gz"
 
 # Install required packages for QAT
-sudo apt-get update
-sudo apt-get install -y zlib1g-dev libisal-dev libudev-dev udev yasm libboost-all-dev gcc g++ pkg-config linux-headers-$(uname -r)
+#sudo apt-get update
+#sudo apt-get install -y zlib1g-dev libisal-dev libudev-dev udev yasm libboost-all-dev gcc g++ pkg-config linux-headers-$(uname -r)
 
 # Download and extract QAT driver
 sudo rm -rf /opt/QAT20
