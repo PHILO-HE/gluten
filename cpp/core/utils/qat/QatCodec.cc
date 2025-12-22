@@ -153,7 +153,7 @@ std::unique_ptr<arrow::util::Codec> makeQatGZipCodec(QzPollingMode_T pollingMode
 }
 
 std::unique_ptr<arrow::util::Codec> makeDefaultQatGZipCodec() {
-  return makeQatGZipCodec(QZ_PERIODICAL_POLLING, QZ_COMP_LEVEL_DEFAULT);
+  return makeQatGZipCodec(QZ_BUSY_POLLING, QZ_COMP_LEVEL_DEFAULT);
 }
 
 namespace {
