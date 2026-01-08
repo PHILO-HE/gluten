@@ -38,6 +38,11 @@ on:
       - 'ep/build-velox/**'
       - 'cpp/**'
       - 'dev/**'
+  workflow_dispatch:
+    inputs:
+      spark_test_image:
+        required: true
+        default: apache/gluten:centos-8-jdk8
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -55,6 +60,8 @@ concurrency:
 jobs:
   build-native-lib-centos-7:
     runs-on: ubuntu-22.04
+    container:
+      image: ${{ inputs.spark_test_image }}
     steps:
       - uses: actions/checkout@v4
       - name: Get Ccache
@@ -66,6 +73,8 @@ jobs:
             ccache-centos7-release-default
       - name: Build Gluten native libraries
         run: |
+          echo "input value: ${{ inputs.spark_test_image }}"
+          cat /etc/os-release
           docker pull apache/gluten:vcpkg-centos-7
           docker run -v $GITHUB_WORKSPACE:/work -w /work apache/gluten:vcpkg-centos-7 bash -c "
             set -e
@@ -908,7 +917,6 @@ jobs:
   spark-test-spark35:
     needs: build-native-lib-centos-7
     runs-on: ubuntu-22.04
-    container: apache/gluten:centos-8-jdk8
     steps:
       - uses: actions/checkout@v2
       - name: Download All Artifacts
