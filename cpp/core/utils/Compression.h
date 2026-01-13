@@ -31,6 +31,7 @@ std::unique_ptr<arrow::util::Codec> createArrowIpcCodec(
     arrow::Compression::type compressedType,
     CodecBackend codecBackend,
     int32_t compressionLevel = arrow::util::kUseDefaultCompressionLevel,
-    int64_t swCompressThreshold = 0);
+    int64_t swCompressThreshold = 0,
+    bool loggingEnabled = false);
 
 } // namespace gluten

@@ -817,6 +817,10 @@ Java_org_apache_gluten_vectorized_LocalPartitionWriterJniWrapper_createPartition
   auto it = conf.find(kShuffleSwCompressThreshold);
   GLUTEN_CHECK(!(it == conf.end()), "Required key not found in runtime config: " + kShuffleSwCompressThreshold);
   swCompressThreshold = std::stoll(it->second);
+  bool loggingEnabled;
+  it = conf.find(kShuffleCompressLoggingEnabled);
+  GLUTEN_CHECK(!(it == conf.end()), "Required key not found in runtime config: " + kShuffleCompressLoggingEnabled);
+  loggingEnabled = (it->second == "true");
 
   auto dataFile = jStringToCString(env, dataFileJstr);
   auto localDirs = splitPaths(jStringToCString(env, localDirsJstr));
@@ -836,7 +840,8 @@ Java_org_apache_gluten_vectorized_LocalPartitionWriterJniWrapper_createPartition
           getCompressionType(env, codecJstr),
           getCodecBackend(env, codecBackendJstr),
           compressionLevel,
-          swCompressThreshold),
+          swCompressThreshold,
+          loggingEnabled),
       ctx->memoryManager(),
       partitionWriterOptions,
       dataFile,

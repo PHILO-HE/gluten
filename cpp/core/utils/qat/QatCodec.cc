@@ -203,10 +203,15 @@ class QatDevice {
 
 class QatZstdCodec final : public arrow::util::Codec {
  public:
-  explicit QatZstdCodec(int compressionLevel, int64_t swCompressThreshold)
-      : compressionLevel_(compressionLevel), swCompressThreshold_(swCompressThreshold) {}
+  explicit QatZstdCodec(int compressionLevel, int64_t swCompressThreshold, bool loggingEnabled)
+      : compressionLevel_(compressionLevel), swCompressThreshold_(swCompressThreshold), loggingEnabled_(loggingEnabled) {}
 
   ~QatZstdCodec() {
+    if (loggingEnabled_) {
+      ARROW_LOG(INFO) << "Compress requests count: " << requestCount_
+                      << ", software compress threshold: " << swCompressThreshold_ / 1024 << "KB"
+                      << ", fall back to software ratio: " << static_cast<double>(swCompressCount_) / requestCount_;
+    }
     if (initCCtx_) {
       ZSTD_freeCCtx(zc_);
       if (sequenceProducerState_) {
@@ -256,7 +261,9 @@ class QatZstdCodec final : public arrow::util::Codec {
     **/
     RETURN_NOT_OK(initCCtx());
     size_t ret;
+    requestCount_++;
     if (inputLen < swCompressThreshold_) { // Directly fall back to software compression.
+      swCompressCount_++;
       GLUTEN_ASSIGN_OR_THROW(int64_t compressSize, swCodec_->Compress(inputLen, input, outputLen, output));
       ret = (size_t)compressSize;
     } else {
@@ -296,6 +303,7 @@ class QatZstdCodec final : public arrow::util::Codec {
   bool initCCtx_{false};
   std::unique_ptr<arrow::util::Codec> swCodec_;
   int64_t swCompressThreshold_;
+  bool loggingEnabled_;
 
   std::shared_ptr<QatDevice> qatDevice_;
   void* sequenceProducerState_{nullptr};
@@ -303,7 +311,8 @@ class QatZstdCodec final : public arrow::util::Codec {
   int32_t maxInputLen = 0;
   int32_t minInputLen = std::numeric_limits<int32_t>::max();
   int64_t inputLenSum = 0;
-  int32_t requestCount = 0;
+  int32_t requestCount_ = 0;
+  int32_t swCompressCount_ = 0;
 
   arrow::Status initCCtx() {
     if (initCCtx_) {
@@ -331,12 +340,12 @@ class QatZstdCodec final : public arrow::util::Codec {
   }
 };
 
-std::unique_ptr<arrow::util::Codec> makeQatZstdCodec(int compressionLevel, int64_t swCompressThreshold) {
-  return std::unique_ptr<arrow::util::Codec>(new QatZstdCodec(compressionLevel, swCompressThreshold));
+std::unique_ptr<arrow::util::Codec> makeQatZstdCodec(int compressionLevel, int64_t swCompressThreshold, bool loggingEnabled) {
+  return std::unique_ptr<arrow::util::Codec>(new QatZstdCodec(compressionLevel, swCompressThreshold, loggingEnabled));
 }
 
-std::unique_ptr<arrow::util::Codec> makeDefaultQatZstdCodec(int64_t swCompressThreshold) {
-  return makeQatZstdCodec(kZSTDDefaultCompressionLevel, swCompressThreshold);
+std::unique_ptr<arrow::util::Codec> makeDefaultQatZstdCodec(int64_t swCompressThreshold, bool loggingEnabled) {
+  return makeQatZstdCodec(kZSTDDefaultCompressionLevel, swCompressThreshold, loggingEnabled);
 }
 
 } // namespace qat

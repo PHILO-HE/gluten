@@ -536,7 +536,10 @@ object GlutenConfig {
         GLUTEN_COLUMNAR_TO_ROW_MEM_THRESHOLD.defaultValue.get.toString),
       (SPARK_SHUFFLE_SPILL_COMPRESS, SPARK_SHUFFLE_SPILL_COMPRESS_DEFAULT.toString),
       (SQLConf.MAP_KEY_DEDUP_POLICY.key, SQLConf.MAP_KEY_DEDUP_POLICY.defaultValueString),
-      (SESSION_LOCAL_TIMEZONE.key, SESSION_LOCAL_TIMEZONE.defaultValueString)
+      (SESSION_LOCAL_TIMEZONE.key, SESSION_LOCAL_TIMEZONE.defaultValueString),
+      (
+        SHUFFLE_COMPRESS_LOGGING_ENABLED.key,
+        SHUFFLE_COMPRESS_LOGGING_ENABLED.defaultValue.get.toString)
     )
     keyWithDefault.forEach(e => nativeConfMap.put(e._1, conf.getOrElse(e._1, e._2)))
     GlutenConfigUtil.mapByteConfValue(
@@ -1041,6 +1044,12 @@ object GlutenConfig {
         " compression instead of offloading to QAT. It's only effective for zstd codec currently.")
       .bytesConf(ByteUnit.BYTE)
       .createWithDefaultString("4KB")
+
+  val SHUFFLE_COMPRESS_LOGGING_ENABLED =
+    buildConf("spark.gluten.sql.columnar.shuffle.compressLoggingEnabled")
+      .doc("Enable logging in shuffle compression.")
+      .booleanConf
+      .createWithDefault(false)
 
   val COLUMNAR_SHUFFLE_COMPRESSION_MODE =
     buildConf("spark.gluten.sql.columnar.shuffle.compressionMode")

@@ -29,7 +29,8 @@ std::unique_ptr<arrow::util::Codec> createArrowIpcCodec(
     arrow::Compression::type compressedType,
     CodecBackend codecBackend,
     int32_t compressionLevel,
-    int64_t swCompressThreshold) {
+    int64_t swCompressThreshold,
+    bool loggingEnabled) {
   std::unique_ptr<arrow::util::Codec> codec;
   switch (compressedType) {
     case arrow::Compression::LZ4_FRAME: {
@@ -40,7 +41,7 @@ std::unique_ptr<arrow::util::Codec> createArrowIpcCodec(
         GLUTEN_ASSIGN_OR_THROW(codec, arrow::util::Codec::Create(compressedType, compressionLevel));
       } else if (codecBackend == CodecBackend::QAT) {
 #if defined(GLUTEN_ENABLE_QAT)
-        codec = qat::makeDefaultQatZstdCodec(swCompressThreshold);
+        codec = qat::makeDefaultQatZstdCodec(swCompressThreshold, loggingEnabled);
 #else
         throw GlutenException("Backend QAT but not compile with option GLUTEN_ENABLE_QAT");
 #endif
