@@ -16,7 +16,7 @@
  */
 package org.apache.spark.sql.execution.joins
 
-import org.apache.gluten.execution.{BroadCastHashJoinContext, ColumnarNativeIterator}
+import org.apache.gluten.execution.{BroadcastJoinContext, ColumnarNativeIterator}
 import org.apache.gluten.utils.{IteratorUtil, PlanNodesUtil}
 import org.apache.gluten.vectorized._
 
@@ -47,18 +47,17 @@ case class ClickHouseBuildSideRelation(
   private var existHashTableData: Long = 0L
   private var existBroadCastHashJoinContext: BroadCastHashJoinContext = null
 
-  def buildHashTable(
-      broadCastContext: BroadCastHashJoinContext): (Long, ClickHouseBuildSideRelation) =
+  def buildHashTable(broadcastContext: BroadcastJoinContext): (Long, ClickHouseBuildSideRelation) =
     synchronized {
       if (!couldReuseHashTableData(broadCastContext)) {
         logDebug(
           s"BHJ value size: " +
-            s"${broadCastContext.buildHashTableId} = ${batches.length}")
+            s"${broadcastContext.buildTableId} = ${batches.length}")
         // Build the hash table
         existHashTableData = StorageJoinBuilder.build(
           batches,
           numOfRows,
-          broadCastContext,
+          broadcastContext,
           newBuildKeys.asJava,
           output.asJava,
           hasNullKeyValues)
@@ -90,7 +89,7 @@ case class ClickHouseBuildSideRelation(
   override def transform(key: Expression): Array[InternalRow] = {
     // native block reader
     val blockReader = new CHStreamReader(CHShuffleReadStreamFactory.create(batches, true))
-    val broadCastIter: Iterator[ColumnarBatch] = IteratorUtil.createBatchIterator(blockReader)
+    val broadcastIter: Iterator[ColumnarBatch] = IteratorUtil.createBatchIterator(blockReader)
 
     val transformProjections = mode match {
       case HashedRelationBroadcastMode(k, _) => k
@@ -99,7 +98,7 @@ case class ClickHouseBuildSideRelation(
 
     // Expression compute, return block iterator
     val expressionEval = new SimpleExpressionEval(
-      new ColumnarNativeIterator(broadCastIter.asJava),
+      new ColumnarNativeIterator(broadcastIter.asJava),
       PlanNodesUtil.genProjectionsPlanNode(transformProjections, output))
 
     val proj = UnsafeProjection.create(Seq(key))
