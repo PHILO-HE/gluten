@@ -49,7 +49,7 @@ case class ClickHouseBuildSideRelation(
 
   def buildHashTable(broadcastContext: BroadcastJoinContext): (Long, ClickHouseBuildSideRelation) =
     synchronized {
-      if (!couldReuseHashTableData(broadCastContext)) {
+      if (!couldReuseHashTableData(broadcastContext)) {
         logDebug(
           s"BHJ value size: " +
             s"${broadcastContext.buildTableId} = ${batches.length}")
@@ -61,7 +61,7 @@ case class ClickHouseBuildSideRelation(
           newBuildKeys.asJava,
           output.asJava,
           hasNullKeyValues)
-        existBroadCastHashJoinContext = broadCastContext
+        existBroadCastHashJoinContext = broadcastContext
         (existHashTableData, this)
       } else {
         (StorageJoinBuilder.nativeCloneBuildHashTable(existHashTableData), null)
@@ -73,10 +73,10 @@ case class ClickHouseBuildSideRelation(
     existBroadCastHashJoinContext = null
   }
 
-  private def couldReuseHashTableData(broadCastContext: BroadCastHashJoinContext): Boolean = {
+  private def couldReuseHashTableData(broadcastContext: BroadCastHashJoinContext): Boolean = {
     if (existHashTableData != 0) {
-      existBroadCastHashJoinContext.joinType == broadCastContext.joinType &&
-      existBroadCastHashJoinContext.hasMixedFiltCondition == broadCastContext.hasMixedFiltCondition
+      existBroadCastHashJoinContext.joinType == broadcastContext.joinType &&
+      existBroadCastHashJoinContext.hasMixedFiltCondition == broadcastContext.hasMixedFiltCondition
     }
     false
   }

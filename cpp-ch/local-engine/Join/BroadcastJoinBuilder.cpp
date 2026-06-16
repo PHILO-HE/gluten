@@ -108,12 +108,6 @@ std::shared_ptr<StorageJoinFromReadBuffer> getJoin(const int& key)
     return wrapper;
 }
 
-// A join in cross rel.
-static bool isCrossRelJoin(const std::string & key)
-{
-    return key.starts_with("BuiltBNLJBroadcastTable-");
-}
-
 static void collectBlocksForCountingRows(NativeReader & block_stream, Block & header, Blocks & result)
 {
     ProfileInfo profile;
@@ -173,8 +167,7 @@ std::shared_ptr<StorageJoinFromReadBuffer> buildJoin(
 
     DB::JoinKind kind;
     DB::JoinStrictness strictness;
-    bool is_cross_rel_join = isCrossRelJoin(key);
-    if (is_cross_rel_join) assert(key_names.empty()); // cross rel join should not have join keys
+    if (!is_bhj) assert(key_names.empty()); // cross rel join should not have join keys
 
     if (is_bhj)
         std::tie(kind, strictness) = JoinUtil::getJoinKindAndStrictness(static_cast<substrait::JoinRel_JoinType>(join_type), is_existence_join);
@@ -254,7 +247,7 @@ void init(JNIEnv * env)
 
     const char * classSig = "Lorg/apache/gluten/execution/CHBroadcastBuildSideCache;";
     Java_CHBroadcastBuildSideCache = CreateGlobalClassReference(env, classSig);
-    Java_get = GetStaticMethodID(env, Java_CHBroadcastBuildSideCache, "get", "(I))J");
+    Java_get = GetStaticMethodID(env, Java_CHBroadcastBuildSideCache, "get", "(I)J");
 }
 
 void destroy(JNIEnv * env)
